@@ -1,0 +1,214 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Cloud-Based Weather Data Collector and Alert System using AWS
+  M.Sc. Computer Science Semester III Project
+  Abhishek Patil (256237) & Harshit Shelar (256247)
+  Stack: JavaScript / Node.js 20.x, DynamoDB, EventBridge, SNS, API Gateway
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment environment.
+  ScheduleExpression:
+    Type: String
+    Default: rate(10 minutes)
+    Description: Amazon EventBridge schedule rate or cron expression for data collection.
+  AlertEmailRecipient:
+    Type: String
+    Default: ""
+    Description: (Optional) Default email address to subscribe to weather alerts.
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Tracing: Active
+    Environment:
+      Variables:
+        AWS_REGION_NAME: !Ref "AWS::Region"
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS,PUT,DELETE'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # =========================================================================
+  # 1. Amazon DynamoDB Tables (Data Storage Module)
+  # =========================================================================
+  WeatherDataHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "WeatherDataHistory-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: location
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: location
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Project
+          Value: Cloud-Weather-Alert-System
+        - Key: Students
+          Value: Abhishek-Harshit
+
+  WeatherAlertsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "WeatherAlerts-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: alert_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: alert_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Project
+          Value: Cloud-Weather-Alert-System
+
+  ThresholdConfigsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "ThresholdConfigs-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: location
+          AttributeType: S
+      KeySchema:
+        - AttributeName: location
+          KeyType: HASH
+      Tags:
+        - Key: Project
+          Value: Cloud-Weather-Alert-System
+
+  # =========================================================================
+  # 2. Amazon SNS Notification Topic (Alert & Notification Module)
+  # =========================================================================
+  WeatherAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "WeatherAlertTopic-${Environment}"
+      DisplayName: AWS Cloud Weather Alerts
+
+  WeatherAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlertEmail
+    Properties:
+      TopicArn: !Ref WeatherAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmailRecipient
+
+  # =========================================================================
+  # 3. AWS Lambda: Weather Data Collector & Threshold Engine (JavaScript/Node.js)
+  # =========================================================================
+  WeatherCollectorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "WeatherCollectorFunction-${Environment}"
+      CodeUri: ../backend/lambda_collector/
+      Handler: weather_collector.handler
+      Description: Fetches live weather readings, stores in DynamoDB, checks thresholds, publishes SNS alerts.
+      Environment:
+        Variables:
+          WEATHER_TABLE_NAME: !Ref WeatherDataHistoryTable
+          ALERTS_TABLE_NAME: !Ref WeatherAlertsTable
+          THRESHOLDS_TABLE_NAME: !Ref ThresholdConfigsTable
+          SNS_TOPIC_ARN: !Ref WeatherAlertTopic
+          LOCATIONS: "Mumbai,Pune,Delhi,Bengaluru,London,New York,Tokyo"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WeatherDataHistoryTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WeatherAlertsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ThresholdConfigsTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt WeatherAlertTopic.TopicName
+      Events:
+        ScheduledWeatherCollection:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref ScheduleExpression
+            Name: !Sub "WeatherFetchSchedule-${Environment}"
+            Description: Periodic EventBridge trigger for weather data collection
+            Enabled: true
+
+  # =========================================================================
+  # 4. AWS Lambda: REST API Handler for Dashboard (JavaScript/Node.js)
+  # =========================================================================
+  WeatherApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "WeatherApiFunction-${Environment}"
+      CodeUri: ../backend/lambda_api/
+      Handler: api_handler.handler
+      Description: Serves REST API requests from the frontend dashboard.
+      Environment:
+        Variables:
+          WEATHER_TABLE_NAME: !Ref WeatherDataHistoryTable
+          ALERTS_TABLE_NAME: !Ref WeatherAlertsTable
+          THRESHOLDS_TABLE_NAME: !Ref ThresholdConfigsTable
+          SNS_TOPIC_ARN: !Ref WeatherAlertTopic
+          COLLECTOR_LAMBDA_NAME: !Ref WeatherCollectorFunction
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WeatherDataHistoryTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WeatherAlertsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ThresholdConfigsTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt WeatherAlertTopic.TopicName
+        - LambdaInvokePolicy:
+            FunctionName: !Ref WeatherCollectorFunction
+      Events:
+        ApiRoot:
+          Type: Api
+          Properties:
+            Path: /api
+            Method: ANY
+        ApiProxy:
+          Type: Api
+          Properties:
+            Path: /api/{proxy+}
+            Method: ANY
+
+Conditions:
+  HasAlertEmail: !Not [!Equals [!Ref AlertEmailRecipient, ""]]
+
+Outputs:
+  ApiGatewayUrl:
+    Description: Production API Gateway REST Endpoint for Web Dashboard
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  
+  WeatherCollectorFunctionArn:
+    Description: ARN of the Weather Collector Lambda
+    Value: !GetAtt WeatherCollectorFunction.Arn
+    
+  SnsTopicArn:
+    Description: ARN of the Weather Alert SNS Topic
+    Value: !Ref WeatherAlertTopic
+
+  WeatherDataTable:
+    Description: DynamoDB Table Name for Historical Readings
+    Value: !Ref WeatherDataHistoryTable
+
+  AlertsTable:
+    Description: DynamoDB Table Name for Alerts Log
+    Value: !Ref WeatherAlertsTable

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Weather Data Collector & Alert System | AWS Project</title>
+  <meta name="description" content="Cloud-Based Weather Data Collector and Alert System using AWS Lambda, Amazon DynamoDB, EventBridge, and SNS. Developed for MSc Computer Science Sem III.">
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js for Responsive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Glow Orbs -->
+  <div class="bg-orb orb-primary"></div>
+  <div class="bg-orb orb-secondary"></div>
+  <div class="bg-orb orb-tertiary"></div>
+
+  <div class="app-container">
+    <!-- Top Navigation / Header -->
+    <header class="glass-header">
+      <div class="header-brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-cloud-bolt"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Cloud Weather Collector & Alert System</h1>
+          <p class="subtitle">
+            <span class="badge-aws"><i class="fa-brands fa-aws"></i> AWS Cloud Native</span>
+            <span class="academic-tag">M.Sc. Comp Sci (Sem III) &bull; Abhishek Patil (256237) & Harshit Shelar (256247)</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Backend Mode Selector (Local Cloud / AWS Cloud) -->
+        <div class="api-mode-badge" id="apiModeBadge" title="Connected to Local AWS Cloud Simulator">
+          <span class="pulse-dot"></span>
+          <span id="apiModeText">AWS Simulator Active</span>
+        </div>
+
+        <button class="btn btn-primary" id="btnManualIngest" title="Trigger AWS Lambda Weather Ingestion">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Ingest Data</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-grid">
+      
+      <!-- Left Column: Controls, Hero & Real-time Metrics -->
+      <section class="main-column">
+        
+        <!-- City Selector & Search Bar -->
+        <div class="glass-card city-bar-card">
+          <div class="city-pill-wrapper" id="cityPills">
+            <button class="city-pill active" data-city="Mumbai">Mumbai</button>
+            <button class="city-pill" data-city="Pune">Pune</button>
+            <button class="city-pill" data-city="Delhi">Delhi</button>
+            <button class="city-pill" data-city="Bengaluru">Bengaluru</button>
+            <button class="city-pill" data-city="London">London</button>
+            <button class="city-pill" data-city="New York">New York</button>
+            <button class="city-pill" data-city="Tokyo">Tokyo</button>
+          </div>
+          
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="customCityInput" placeholder="Search any city worldwide..." autocomplete="off">
+            <button id="btnSearchCity" class="btn-icon" title="Search City"><i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Weather Hero Card -->
+        <div class="glass-card hero-weather-card">
+          <div class="hero-left">
+            <div class="location-badge">
+              <i class="fa-solid fa-location-dot"></i>
+              <span id="heroCityName">Mumbai</span>, <span id="heroCountry">India</span>
+            </div>
+            <div class="hero-temp-wrapper">
+              <span class="hero-temp" id="heroTemperature">32.4</span>
+              <span class="hero-unit">°C</span>
+            </div>
+            <div class="hero-condition" id="heroCondition">Mainly Clear</div>
+            <div class="hero-subinfo">
+              <span>Feels like: <strong id="heroFeelsLike">34.1°C</strong></span>
+              <span class="separator">&bull;</span>
+              <span>Updated: <span id="heroLastUpdated">Just now</span></span>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <div class="weather-icon-large" id="heroWeatherIcon">
+              <i class="fa-solid fa-sun weather-icon-anim"></i>
+            </div>
+            <div class="condition-badge" id="heroConditionBadge">
+              <i class="fa-solid fa-shield-halved"></i> Normal Conditions
+            </div>
+          </div>
+        </div>
+
+        <!-- 4-Stat Metric Cards Grid -->
+        <div class="metrics-grid">
+          <!-- Humidity -->
+          <div class="glass-card metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Relative Humidity</span>
+              <div class="metric-icon-wrap icon-cyan"><i class="fa-solid fa-droplet"></i></div>
+            </div>
+            <div class="metric-value-wrap">
+              <span class="metric-value" id="metricHumidity">72</span>
+              <span class="metric-unit">%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar bar-cyan" id="humidityProgress" style="width: 72%;"></div>
+            </div>
+            <span class="metric-footer" id="humidityStatus">Optimal comfort levels</span>
+          </div>
+
+          <!-- Wind Speed -->
+          <div class="glass-card metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Wind Speed</span>
+              <div class="metric-icon-wrap icon-indigo"><i class="fa-solid fa-wind"></i></div>
+            </div>
+            <div class="metric-value-wrap">
+              <span class="metric-value" id="metricWindSpeed">14.2</span>
+              <span class="metric-unit">km/h</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar bar-indigo" id="windProgress" style="width: 30%;"></div>
+            </div>
+            <span class="metric-footer" id="windStatus">Gentle Breeze</span>
+          </div>
+
+          <!-- Atmospheric Pressure -->
+          <div class="glass-card metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Pressure (Surface)</span>
+              <div class="metric-icon-wrap icon-purple"><i class="fa-solid fa-gauge-high"></i></div>
+            </div>
+            <div class="metric-value-wrap">
+              <span class="metric-value" id="metricPressure">1011.5</span>
+              <span class="metric-unit">hPa</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar bar-purple" id="pressureProgress" style="width: 65%;"></div>
+            </div>
+            <span class="metric-footer" id="pressureStatus">Stable Barometric Pressure</span>
+          </div>
+
+          <!-- Precipitation / Alerts Count -->
+          <div class="glass-card metric-card">
+            <div class="metric-header">
+              <span class="metric-title">Active Alerts</span>
+              <div class="metric-icon-wrap icon-rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            </div>
+            <div class="metric-value-wrap">
+              <span class="metric-value" id="metricAlertCount">0</span>
+              <span class="metric-unit">Warnings</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar bar-rose" id="alertProgress" style="width: 0%;"></div>
+            </div>
+            <span class="metric-footer text-emerald" id="alertSummaryText">All parameters within safety thresholds</span>
+          </div>
+        </div>
+
+        <!-- Historical Trend Charts -->
+        <div class="glass-card chart-card">
+          <div class="card-header-flex">
+            <div>
+              <h3 class="card-title"><i class="fa-solid fa-chart-line"></i> 24-Hour Temperature & Feels Like Trend</h3>
+              <p class="card-desc">Recorded readings stored in Amazon DynamoDB table (<code>WeatherDataHistory</code>)</p>
+            </div>
+            <div class="chart-timeframe-tag">Continuous Stream</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="temperatureChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Humidity & Wind Speed Chart -->
+        <div class="glass-card chart-card">
+          <div class="card-header-flex">
+            <div>
+              <h3 class="card-title"><i class="fa-solid fa-chart-area"></i> Humidity vs Wind Speed Dynamics</h3>
+              <p class="card-desc">Correlation metrics monitored against safety and storm thresholds</p>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="humidityWindChart"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Alerts, Threshold Settings, Cloud Simulator, Subscriptions -->
+      <aside class="sidebar-column">
+
+        <!-- Live Cloud Architecture Status Box -->
+        <div class="glass-card aws-status-card">
+          <h4 class="sidebar-title"><i class="fa-brands fa-aws"></i> AWS Cloud Architecture</h4>
+          <ul class="aws-component-list">
+            <li class="aws-component">
+              <div class="aws-comp-icon"><i class="fa-solid fa-clock"></i></div>
+              <div class="aws-comp-details">
+                <strong>EventBridge Scheduler</strong>
+                <small>Cron Rule &bull; Rate (10 mins)</small>
+              </div>
+              <span class="status-badge-active">ACTIVE</span>
+            </li>
+            <li class="aws-component">
+              <div class="aws-comp-icon"><i class="fa-solid fa-bolt"></i></div>
+              <div class="aws-comp-details">
+                <strong>AWS Lambda Function</strong>
+                <small>Weather Collector & Threshold Engine</small>
+              </div>
+              <span class="status-badge-active">READY</span>
+            </li>
+            <li class="aws-component">
+              <div class="aws-comp-icon"><i class="fa-solid fa-database"></i></div>
+              <div class="aws-comp-details">
+                <strong>Amazon DynamoDB</strong>
+                <small>WeatherDataHistory & WeatherAlerts</small>
+              </div>
+              <span class="status-badge-active">SYNCED</span>
+            </li>
+            <li class="aws-component">
+              <div class="aws-comp-icon"><i class="fa-solid fa-bell"></i></div>
+              <div class="aws-comp-details">
+                <strong>Amazon SNS Topic</strong>
+                <small>WeatherAlertTopic (Email/SMS)</small>
+              </div>
+              <span class="status-badge-active">ONLINE</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Live Alert Notifications Feed -->
+        <div class="glass-card alerts-feed-card">
+          <div class="card-header-flex">
+            <h4 class="sidebar-title"><i class="fa-solid fa-satellite-dish"></i> Real-Time Alerts Feed</h4>
+            <span class="badge-count" id="badgeAlertTotal">0</span>
+          </div>
+          <p class="sidebar-subtitle">Triggered whenever conditions breach safety thresholds</p>
+          
+          <div class="alerts-list-container" id="alertsList">
+            <!-- Dynamic Alert Items -->
+            <div class="alert-empty-state">
+              <i class="fa-solid fa-circle-check"></i>
+              <p>No weather anomalies currently recorded.</p>
+              <small>System is actively monitoring all telemetry.</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Threshold Configuration Editor -->
+        <div class="glass-card thresholds-card">
+          <div class="card-header-flex">
+            <h4 class="sidebar-title"><i class="fa-solid fa-sliders"></i> Alert Threshold Limits</h4>
+            <span class="city-tag" id="thresholdCityTag">Mumbai</span>
+          </div>
+          <p class="sidebar-subtitle">Predefined thresholds checked automatically during ingestion</p>
+
+          <form id="thresholdForm" class="threshold-form">
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="threshMaxTemp">Max Temperature Warning (°C)</label>
+                <span class="slider-val" id="valMaxTemp">38°C</span>
+              </div>
+              <input type="range" id="threshMaxTemp" min="25" max="50" step="1" value="38">
+            </div>
+
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="threshMinTemp">Min Temperature Warning (°C)</label>
+                <span class="slider-val" id="valMinTemp">5°C</span>
+              </div>
+              <input type="range" id="threshMinTemp" min="-10" max="20" step="1" value="5">
+            </div>
+
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="threshMaxWind">Max Wind Speed (km/h)</label>
+                <span class="slider-val" id="valMaxWind">45 km/h</span>
+              </div>
+              <input type="range" id="threshMaxWind" min="20" max="100" step="5" value="45">
+            </div>
+
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="threshMaxHumid">Max Humidity Limit (%)</label>
+                <span class="slider-val" id="valMaxHumid">85%</span>
+              </div>
+              <input type="range" id="threshMaxHumid" min="50" max="100" step="5" value="85">
+            </div>
+
+            <button type="submit" class="btn btn-secondary w-100" id="btnSaveThresholds">
+              <i class="fa-solid fa-floppy-disk"></i> Save Thresholds (DynamoDB)
+            </button>
+          </form>
+        </div>
+
+        <!-- Simulation & Cloud Testing Suite -->
+        <div class="glass-card simulation-card">
+          <h4 class="sidebar-title"><i class="fa-solid fa-flask-vial"></i> Cloud Alert Simulator</h4>
+          <p class="sidebar-subtitle">Simulate extreme weather events to test the alert and SNS pipeline immediately:</p>
+          
+          <div class="simulation-btn-grid">
+            <button class="btn-sim sim-heat" data-scenario="heatwave" title="Simulate 43.5°C Heatwave">
+              <i class="fa-solid fa-temperature-arrow-up"></i> Heatwave (43.5°C)
+            </button>
+            <button class="btn-sim sim-storm" data-scenario="storm" title="Simulate 62km/h Storm">
+              <i class="fa-solid fa-cloud-bolt"></i> Storm & Gale
+            </button>
+            <button class="btn-sim sim-cold" data-scenario="coldwave" title="Simulate 1.5°C Cold Wave">
+              <i class="fa-solid fa-snowflake"></i> Coldwave (1.5°C)
+            </button>
+            <button class="btn-sim sim-normal" data-scenario="normal" title="Restore Live Readings">
+              <i class="fa-solid fa-cloud-sun"></i> Live Weather
+            </button>
+          </div>
+        </div>
+
+        <!-- SNS Notification Subscriber Form -->
+        <div class="glass-card subscribe-card">
+          <h4 class="sidebar-title"><i class="fa-solid fa-envelope-open-text"></i> SNS Alert Subscription</h4>
+          <p class="sidebar-subtitle">Subscribe an email to receive instant alerts via Amazon SNS</p>
+          
+          <form id="subscribeForm" class="subscribe-form">
+            <div class="input-with-button">
+              <input type="email" id="subscriberEmail" placeholder="Enter recipient email..." required>
+              <button type="submit" class="btn btn-primary" id="btnSubscribe">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+            <small class="form-hint" id="subscribeFeedback">Subscribes endpoint to Amazon SNS <code>WeatherAlertTopic</code>.</small>
+          </form>
+        </div>
+
+      </aside>
+
+    </main>
+
+    <!-- Toast Notification Banner -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Academic Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <p><strong>Cloud-Based Weather Data Collector and Alert System using AWS</strong></p>
+        <p>Department of Computer Science &bull; M.Sc. Computer Science Semester III</p>
+        <p class="footer-names">
+          <span><i class="fa-solid fa-user-graduate"></i> Abhishek Patil (Roll No. 256237)</span>
+          <span class="footer-sep">&bull;</span>
+          <span><i class="fa-solid fa-user-graduate"></i> Harshit Shelar (Roll No. 256247)</span>
+        </p>
+        <div class="footer-tags">
+          <span class="tech-tag">AWS Lambda</span>
+          <span class="tech-tag">Amazon DynamoDB</span>
+          <span class="tech-tag">Amazon EventBridge</span>
+          <span class="tech-tag">Amazon SNS</span>
+          <span class="tech-tag">REST API</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

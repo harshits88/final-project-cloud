@@ -1,10 +1,4 @@
-/**
- * Cloud Weather Data Collector & Alert System
- * Interactive Frontend Dashboard Controller
- * Connects to AWS API Gateway or Local Cloud Emulation Server
- */
 
-// Application State
 const state = {
   currentCity: "Mumbai",
   apiBaseUrl: window.location.origin.startsWith("http") ? "" : "http://localhost:8000",
@@ -18,7 +12,7 @@ const state = {
   autoRefreshSeconds: 30
 };
 
-// Weather Code to Icon & Theme Mapping
+
 const WEATHER_ICON_MAP = {
   0: { icon: "fa-sun", color: "#fbbf24" },                 // Clear
   1: { icon: "fa-cloud-sun", color: "#fcd34d" },           // Mainly clear
@@ -43,7 +37,6 @@ const WEATHER_ICON_MAP = {
   99: { icon: "fa-bolt-lightning", color: "#ef4444" }       // Severe Thunderstorm
 };
 
-// DOM Element Selectors
 const elements = {
   heroCityName: document.getElementById("heroCityName"),
   heroCountry: document.getElementById("heroCountry"),
@@ -53,31 +46,29 @@ const elements = {
   heroLastUpdated: document.getElementById("heroLastUpdated"),
   heroWeatherIcon: document.getElementById("heroWeatherIcon"),
   heroConditionBadge: document.getElementById("heroConditionBadge"),
-  
+
   metricHumidity: document.getElementById("metricHumidity"),
   humidityProgress: document.getElementById("humidityProgress"),
   humidityStatus: document.getElementById("humidityStatus"),
-  
+
   metricWindSpeed: document.getElementById("metricWindSpeed"),
   windProgress: document.getElementById("windProgress"),
   windStatus: document.getElementById("windStatus"),
-  
+
   metricPressure: document.getElementById("metricPressure"),
   pressureProgress: document.getElementById("pressureProgress"),
   pressureStatus: document.getElementById("pressureStatus"),
-  
+
   metricAlertCount: document.getElementById("metricAlertCount"),
   alertProgress: document.getElementById("alertProgress"),
   alertSummaryText: document.getElementById("alertSummaryText"),
-  
+
   alertsList: document.getElementById("alertsList"),
   badgeAlertTotal: document.getElementById("badgeAlertTotal"),
-  
+
   cityPills: document.getElementById("cityPills"),
-  customCityInput: document.getElementById("customCityInput"),
-  btnSearchCity: document.getElementById("btnSearchCity"),
   btnManualIngest: document.getElementById("btnManualIngest"),
-  
+
   thresholdCityTag: document.getElementById("thresholdCityTag"),
   thresholdForm: document.getElementById("thresholdForm"),
   threshMaxTemp: document.getElementById("threshMaxTemp"),
@@ -88,17 +79,17 @@ const elements = {
   valMaxWind: document.getElementById("valMaxWind"),
   threshMaxHumid: document.getElementById("threshMaxHumid"),
   valMaxHumid: document.getElementById("valMaxHumid"),
-  
+
   subscribeForm: document.getElementById("subscribeForm"),
   subscriberEmail: document.getElementById("subscriberEmail"),
   subscribeFeedback: document.getElementById("subscribeFeedback"),
   subscribersList: document.getElementById("subscribersList"),
   btnRefreshSubscribers: document.getElementById("btnRefreshSubscribers"),
-  
+
   toastContainer: document.getElementById("toastContainer")
 };
 
-// Initialization
+
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   initCharts();
@@ -107,46 +98,38 @@ document.addEventListener("DOMContentLoaded", () => {
   startAutoRefresh();
 });
 
-// Event Listeners Setup
+
 function setupEventListeners() {
-  // City Pills Click
+
   elements.cityPills.addEventListener("click", (e) => {
     const pill = e.target.closest(".city-pill");
     if (!pill) return;
-    
+
     document.querySelectorAll(".city-pill").forEach(p => p.classList.remove("active"));
     pill.classList.add("active");
-    
+
     const city = pill.dataset.city;
     state.currentCity = city;
     loadAllCityData(city);
   });
 
-  // Custom City Search
-  elements.btnSearchCity.addEventListener("click", handleCitySearch);
-  elements.customCityInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") handleCitySearch();
-  });
-
-  // Manual Weather Ingestion Trigger
   elements.btnManualIngest.addEventListener("click", triggerManualIngest);
 
-  // Threshold Slider Realtime Value Labels
+
   elements.threshMaxTemp.addEventListener("input", (e) => elements.valMaxTemp.textContent = `${e.target.value}°C`);
   elements.threshMinTemp.addEventListener("input", (e) => elements.valMinTemp.textContent = `${e.target.value}°C`);
   elements.threshMaxWind.addEventListener("input", (e) => elements.valMaxWind.textContent = `${e.target.value} km/h`);
   elements.threshMaxHumid.addEventListener("input", (e) => elements.valMaxHumid.textContent = `${e.target.value}%`);
 
-  // Threshold Form Submission
   elements.thresholdForm.addEventListener("submit", handleThresholdSave);
 
-  // SNS Subscription Form
+
   elements.subscribeForm.addEventListener("submit", handleSnsSubscription);
   if (elements.btnRefreshSubscribers) {
     elements.btnRefreshSubscribers.addEventListener("click", loadSubscribers);
   }
 
-  // Cloud Simulation Buttons
+
   document.querySelectorAll(".btn-sim").forEach(btn => {
     btn.addEventListener("click", (e) => {
       const scenario = btn.dataset.scenario;
@@ -234,7 +217,7 @@ function initCharts() {
     }
   });
 
-  // Humidity & Wind Speed Chart
+
   const humCtx = document.getElementById("humidityWindChart").getContext("2d");
   state.humidityWindChart = new Chart(humCtx, {
     type: 'line',
@@ -294,11 +277,11 @@ function initCharts() {
   });
 }
 
-// Data Fetching & Sync
+
 async function loadAllCityData(city) {
   try {
     showToast(`Loading weather telemetry for ${city}...`, 'info');
-    
+
     // Fetch Current Weather, History, Thresholds, and Alerts in parallel
     const [currentRes, historyRes, thresholdsRes, alertsRes] = await Promise.all([
       fetch(`${state.apiBaseUrl}/api/weather/current?city=${encodeURIComponent(city)}`).then(r => r.json()),
@@ -324,7 +307,7 @@ async function loadAllCityData(city) {
   }
 }
 
-// UI Updating Functions
+
 function updateHeroUI(data) {
   if (!data || !data.location) return;
 
@@ -333,20 +316,19 @@ function updateHeroUI(data) {
   elements.heroTemperature.textContent = data.temperature !== undefined ? data.temperature.toFixed(1) : "--";
   elements.heroCondition.textContent = data.condition || "Unknown";
   elements.heroFeelsLike.textContent = data.feels_like !== undefined ? `${data.feels_like.toFixed(1)}°C` : "--";
-  
+
   if (data.recorded_at) {
     elements.heroLastUpdated.textContent = data.recorded_at;
   } else {
     elements.heroLastUpdated.textContent = new Date().toLocaleTimeString();
   }
 
-  // Update Weather Icon
   const code = data.weather_code !== undefined ? data.weather_code : 0;
   const iconConfig = WEATHER_ICON_MAP[code] || { icon: "fa-cloud-sun", color: "#fbbf24" };
-  
+
   elements.heroWeatherIcon.innerHTML = `<i class="fa-solid ${iconConfig.icon} weather-icon-anim" style="color: ${iconConfig.color};"></i>`;
 
-  // Condition Badge Status
+
   const temp = data.temperature || 0;
   const wind = data.wind_speed || 0;
   if (temp > 40 || wind > 50 || [95, 96, 99].includes(code)) {
@@ -389,7 +371,7 @@ function updateMetricsUI(data) {
   const alertCount = cityAlerts.length;
   elements.metricAlertCount.textContent = alertCount;
   elements.alertProgress.style.width = `${Math.min(100, alertCount * 25)}%`;
-  
+
   if (alertCount > 0) {
     elements.alertSummaryText.className = "metric-footer text-rose";
     elements.alertSummaryText.textContent = `${alertCount} safety threshold(s) breached`;
@@ -438,7 +420,7 @@ function updateChartsUI(history) {
 
 function updateThresholdsUI(thresholds, city) {
   elements.thresholdCityTag.textContent = city;
-  
+
   const maxT = thresholds.max_temperature || 38;
   const minT = thresholds.min_temperature || 5;
   const maxW = thresholds.max_wind_speed || 45;
@@ -490,23 +472,11 @@ function updateAlertsUI(alerts) {
 }
 
 // User Actions
-async function handleCitySearch() {
-  const query = elements.customCityInput.value.trim();
-  if (!query) return;
-
-  state.currentCity = query;
-  elements.customCityInput.value = "";
-
-  // Deselect pills
-  document.querySelectorAll(".city-pill").forEach(p => p.classList.remove("active"));
-  
-  await loadAllCityData(query);
-}
 
 async function triggerManualIngest() {
   const icon = elements.btnManualIngest.querySelector("i");
   icon.classList.add("fa-spin");
-  
+
   try {
     const res = await fetch(`${state.apiBaseUrl}/api/collect`, {
       method: "POST",
@@ -526,7 +496,7 @@ async function triggerManualIngest() {
 
 async function handleThresholdSave(e) {
   e.preventDefault();
-  
+
   const payload = {
     location: state.currentCity,
     max_temperature: parseFloat(elements.threshMaxTemp.value),
@@ -580,7 +550,7 @@ async function loadSubscribers() {
   try {
     const res = await fetch(`${state.apiBaseUrl}/api/subscriptions`).then(r => r.json());
     const subs = res.subscriptions || [];
-    
+
     if (subs.length === 0) {
       elements.subscribersList.innerHTML = `<span style="color: #64748b; font-style: italic;">No subscribers found.</span>`;
       return;
@@ -615,7 +585,7 @@ async function loadSubscribers() {
   }
 }
 
-window.handleUnsubscribe = async function(subArn) {
+window.handleUnsubscribe = async function (subArn) {
   if (!confirm("Are you sure you want to unsubscribe this recipient from Amazon SNS?")) return;
   try {
     const res = await fetch(`${state.apiBaseUrl}/api/unsubscribe`, {
@@ -666,7 +636,7 @@ function startAutoRefresh() {
 function showToast(message, type = 'info') {
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  
+
   let iconClass = 'fa-circle-info';
   if (type === 'success') iconClass = 'fa-circle-check';
   if (type === 'alert') iconClass = 'fa-triangle-exclamation';

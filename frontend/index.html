@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cloud Weather Data Collector & Alert System | AWS Project</title>
-  <meta name="description" content="Cloud-Based Weather Data Collector and Alert System using AWS Lambda, Amazon DynamoDB, EventBridge, and SNS. Developed for MSc Computer Science Sem III.">
+  <meta name="description" content="Cloud-Based Weather Data Collector and Alert System using AWS Lambda, Amazon DynamoDB, EventBridge, and SNS. Real-time meteorological telemetry and threshold alerting.">
   
   <!-- Google Fonts: Outfit & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,7 +36,7 @@
           <h1>Cloud Weather Collector & Alert System</h1>
           <p class="subtitle">
             <span class="badge-aws"><i class="fa-brands fa-aws"></i> AWS Cloud Native</span>
-            <span class="academic-tag">M.Sc. Comp Sci (Sem III) &bull; Abhishek Patil (256237) & Harshit Shelar (256247)</span>
+            <span class="badge-tag">Serverless Telemetry & Alerting</span>
           </p>
         </div>
       </div>
@@ -61,7 +61,7 @@
       <!-- Left Column: Controls, Hero & Real-time Metrics -->
       <section class="main-column">
         
-        <!-- City Selector & Search Bar -->
+        <!-- City Selection Bar -->
         <div class="glass-card city-bar-card">
           <div class="city-pill-wrapper" id="cityPills">
             <button class="city-pill active" data-city="Mumbai">Mumbai</button>
@@ -71,12 +71,6 @@
             <button class="city-pill" data-city="London">London</button>
             <button class="city-pill" data-city="New York">New York</button>
             <button class="city-pill" data-city="Tokyo">Tokyo</button>
-          </div>
-          
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text" id="customCityInput" placeholder="Search any city worldwide..." autocomplete="off">
-            <button id="btnSearchCity" class="btn-icon" title="Search City"><i class="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
 
@@ -372,22 +366,17 @@
     <!-- Toast Notification Banner -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Academic Footer -->
+    <!-- App Footer -->
     <footer class="app-footer">
       <div class="footer-content">
         <p><strong>Cloud-Based Weather Data Collector and Alert System using AWS</strong></p>
-        <p>Department of Computer Science &bull; M.Sc. Computer Science Semester III</p>
-        <p class="footer-names">
-          <span><i class="fa-solid fa-user-graduate"></i> Abhishek Patil (Roll No. 256237)</span>
-          <span class="footer-sep">&bull;</span>
-          <span><i class="fa-solid fa-user-graduate"></i> Harshit Shelar (Roll No. 256247)</span>
-        </p>
+        <p class="footer-desc">Real-Time Meteorological Telemetry & Serverless Event-Driven Alerting System</p>
         <div class="footer-tags">
-          <span class="tech-tag">AWS Lambda</span>
-          <span class="tech-tag">Amazon DynamoDB</span>
-          <span class="tech-tag">Amazon EventBridge</span>
-          <span class="tech-tag">Amazon SNS</span>
-          <span class="tech-tag">REST API</span>
+          <span class="tech-tag"><i class="fa-brands fa-aws"></i> AWS Lambda</span>
+          <span class="tech-tag"><i class="fa-solid fa-database"></i> Amazon DynamoDB</span>
+          <span class="tech-tag"><i class="fa-solid fa-clock"></i> Amazon EventBridge</span>
+          <span class="tech-tag"><i class="fa-solid fa-bell"></i> Amazon SNS</span>
+          <span class="tech-tag"><i class="fa-solid fa-network-wired"></i> REST API</span>
         </div>
       </div>
     </footer>

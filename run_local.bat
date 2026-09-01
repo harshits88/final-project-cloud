@@ -3,9 +3,7 @@ title AWS Cloud Weather Alert System - Node.js Local Server
 cls
 echo ==============================================================================
 echo   CLOUD-BASED WEATHER DATA COLLECTOR AND ALERT SYSTEM USING AWS
-echo   Department of Computer Science - M.Sc. Computer Science Semester III
-echo   Students: Abhishek Patil (256237) ^& Harshit Shelar (256247)
-echo   Stack: 100%% JavaScript (Node.js, HTML5, CSS3, Chart.js)
+echo   Stack: Full-Stack Cloud Native (Node.js, HTML5, CSS3, Chart.js)
 echo ==============================================================================
 echo.
 echo [1/2] Checking Node.js installation...

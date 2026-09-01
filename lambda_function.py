@@ -1,20 +1,3 @@
-"""
-AWS Lambda Function: Cloud-Based Weather Data Collector and Alert System
-========================================================================
-Project: Cloud-Based Weather Data Collector and Alert System using AWS
-Course: M.Sc. Computer Science (Semester III)
-Students: Abhishek Patil (Roll No. 256237) & Harshit Shelar (Roll No. 256247)
-Runtime: Python 3.10 / 3.11 / 3.12 / 3.13 (AWS Lambda Native)
-
-Description:
-  1. Triggered by Amazon EventBridge (e.g. rate(10 minutes) or cron schedule).
-  2. Fetches real-time weather telemetry from Open-Meteo Meteorological API
-     (Temperature, Feels Like, Humidity, Wind Speed, Pressure, Weather Conditions).
-  3. Writes historical readings to Amazon DynamoDB ('weatheralerts' / 'WeatherData').
-  4. Evaluates telemetry against predefined safety thresholds.
-  5. Publishes critical alerts to Amazon SNS ('WeatherAlerts' Topic ARN),
-     which instantly dispatches Email & SMS notifications to subscribed users.
-"""
 
 import json
 import os
@@ -23,23 +6,19 @@ import urllib.parse
 from datetime import datetime, timezone
 from decimal import Decimal
 
-# AWS SDK (pre-installed in AWS Lambda Python runtime)
 try:
     import boto3
     AWS_AVAILABLE = True
 except ImportError:
     AWS_AVAILABLE = False
 
-# ==============================================================================
-# CONFIGURATION & CONSTANTS
-# ==============================================================================
+
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 DYNAMODB_TABLE_NAME = os.environ.get("DYNAMODB_TABLE_NAME", "weatheralerts")
 DYNAMODB_WEATHER_TABLE = os.environ.get("DYNAMODB_WEATHER_TABLE", "WeatherData")
 SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:609722444170:WeatherAlerts")
 DEFAULT_CITIES = os.environ.get("LOCATIONS", "Mumbai,Pune,Delhi,Bengaluru").split(",")
 
-# Safety Threshold Limits (Predefined meteorological thresholds)
 DEFAULT_THRESHOLDS = {
     "max_temperature": float(os.environ.get("THRESH_MAX_TEMP", 38.0)),  # °C (Heatwave)
     "min_temperature": float(os.environ.get("THRESH_MIN_TEMP", 5.0)),   # °C (Cold wave)
@@ -48,7 +27,6 @@ DEFAULT_THRESHOLDS = {
     "min_pressure": float(os.environ.get("THRESH_MIN_PRESS", 995.0)),   # hPa (Depression/Storm)
 }
 
-# Known Coordinates Cache for instant lookup
 KNOWN_COORDINATES = {
     "mumbai": {"lat": 19.0760, "lon": 72.8777, "name": "Mumbai", "country": "India", "station_id": "STN_MUMBAI_01"},
     "pune": {"lat": 18.5204, "lon": 73.8567, "name": "Pune", "country": "India", "station_id": "STN_PUNE_01"},
@@ -59,7 +37,6 @@ KNOWN_COORDINATES = {
     "tokyo": {"lat": 35.6762, "lon": 139.6503, "name": "Tokyo", "country": "Japan", "station_id": "STN_TYO_01"}
 }
 
-# WMO Weather Condition Descriptions
 WMO_WEATHER_CODES = {
     0: "Clear Sky",
     1: "Mainly Clear",
@@ -89,9 +66,6 @@ def get_weather_description(code: int) -> str:
     return WMO_WEATHER_CODES.get(code, f"Weather Condition (Code {code})")
 
 
-# ==============================================================================
-# DATA COLLECTION MODULE
-# ==============================================================================
 def resolve_city_coordinates(city_name: str) -> dict:
     """
     Resolves latitude, longitude, and station_id for a given city name.
@@ -101,7 +75,7 @@ def resolve_city_coordinates(city_name: str) -> dict:
     if clean_name in KNOWN_COORDINATES:
         return KNOWN_COORDINATES[clean_name]
 
-    # Dynamic Geocoding lookup
+
     try:
         query = urllib.parse.urlencode({"name": city_name, "count": 1, "language": "en", "format": "json"})
         url = f"https://geocoding-api.open-meteo.com/v1/search?{query}"
@@ -174,9 +148,6 @@ def fetch_live_weather(lat: float, lon: float, location_name: str, station_id: s
     return reading
 
 
-# ==============================================================================
-# THRESHOLD CHECKER & ANOMALY ENGINE
-# ==============================================================================
 def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -> list:
     """
     Evaluates weather reading against safety thresholds.
@@ -197,7 +168,7 @@ def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -
     pressure = reading.get("pressure", 1013.0)
     weather_code = reading.get("weather_code", 0)
 
-    # 1. High Temperature Alert (Heatwave)
+    # High Temperature Alert (Heatwave)
     if temp >= thresholds["max_temperature"]:
         alerts.append({
             "station_id": station_id,
@@ -212,7 +183,7 @@ def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -
             "message": f"Extreme heat detected in {location}! Current ambient temperature is {temp}°C, exceeding the safety threshold of {thresholds['max_temperature']}°C. Stay hydrated and avoid direct sun exposure."
         })
 
-    # 2. Low Temperature Alert (Cold Wave / Freezing)
+    # Low Temperature Alert (Cold Wave / Freezing)
     elif temp <= thresholds["min_temperature"]:
         alerts.append({
             "station_id": station_id,
@@ -227,7 +198,7 @@ def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -
             "message": f"Low temperature warning in {location}. Current temperature has fallen to {temp}°C (safety threshold: {thresholds['min_temperature']}°C)."
         })
 
-    # 3. High Wind Speed Alert (Gale / Storm Warning)
+    #  High Wind Speed Alert (Gale / Storm Warning)
     if wind_speed >= thresholds["max_wind_speed"]:
         alerts.append({
             "station_id": station_id,
@@ -242,7 +213,7 @@ def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -
             "message": f"Hazardous wind speeds recorded in {location}: {wind_speed} km/h (threshold limit: {thresholds['max_wind_speed']} km/h). Secure loose outdoor structures."
         })
 
-    # 4. Severe Weather Conditions (Thunderstorms / Violent Rain)
+    # Severe Weather Conditions (Thunderstorms / Violent Rain)
     if weather_code in [95, 96, 99]:
         alerts.append({
             "station_id": station_id,
@@ -270,7 +241,7 @@ def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -
             "message": f"Heavy downpour detected in {location}. Potential waterlogging in low-lying areas."
         })
 
-    # 5. Low Atmospheric Pressure (Barometric Depression)
+    #  Low Atmospheric Pressure (Barometric Depression)
     if pressure <= thresholds["min_pressure"]:
         alerts.append({
             "station_id": station_id,
@@ -288,9 +259,6 @@ def evaluate_weather_thresholds(reading: dict, custom_thresholds: dict = None) -
     return alerts
 
 
-# ==============================================================================
-# DATA STORAGE MODULE (Amazon DynamoDB)
-# ==============================================================================
 def convert_floats_to_decimals(obj):
     """Recursively converts float values to Decimal for DynamoDB serialization."""
     if isinstance(obj, float):
@@ -343,9 +311,6 @@ def save_alert_to_dynamodb(alert: dict, table_name: str = DYNAMODB_TABLE_NAME) -
         return False
 
 
-# ==============================================================================
-# ALERT & NOTIFICATION MODULE (Amazon SNS)
-# ==============================================================================
 def publish_sns_alert(alert: dict, topic_arn: str = SNS_TOPIC_ARN) -> dict:
     """
     Publishes formatted alert notifications to Amazon SNS.
@@ -363,7 +328,7 @@ def publish_sns_alert(alert: dict, topic_arn: str = SNS_TOPIC_ARN) -> dict:
 
     subject = f"[{severity}] Weather Alert: {location} - {title}"[:100]
 
-    # Clean multi-line report for Email & SMS subscribers
+    
     body = (
         "=======================================================\n"
         "      AWS CLOUD WEATHER ALERT NOTIFICATION             \n"
@@ -379,8 +344,7 @@ def publish_sns_alert(alert: dict, topic_arn: str = SNS_TOPIC_ARN) -> dict:
         "-------------------------------------------------------\n"
         "Dispatched by: AWS Lambda ('weather-alert-system')\n"
         "Project: Cloud-Based Weather Data Collector & Alert System\n"
-        "Students: Abhishek Patil (256237) & Harshit Shelar (256247)\n"
-        "Department of Computer Science (M.Sc. Semester III)\n"
+        "Service: Automated Cloud Telemetry & Alert Notification\n"
         "=======================================================\n"
     )
 
@@ -403,9 +367,6 @@ def publish_sns_alert(alert: dict, topic_arn: str = SNS_TOPIC_ARN) -> dict:
         return {"status": "Failed", "error": str(e)}
 
 
-# ==============================================================================
-# ORCHESTRATION / PROCESS SINGLE CITY
-# ==============================================================================
 def process_city_weather(city_name: str, simulated_override: dict = None) -> dict:
     """
     Executes end-to-end data pipeline for a single city:
@@ -462,9 +423,6 @@ def process_city_weather(city_name: str, simulated_override: dict = None) -> dic
     }
 
 
-# ==============================================================================
-# AWS LAMBDA MAIN ENTRY POINT
-# ==============================================================================
 def lambda_handler(event, context):
     """
     Main AWS Lambda Entrypoint.
@@ -475,12 +433,12 @@ def lambda_handler(event, context):
     """
     print(f"[LAMBDA EXECUTION] Received Event: {json.dumps(event, default=str)}")
 
-    # Parse target locations
+    
     locations = []
     simulated_override = None
 
     if isinstance(event, dict):
-        # Scenario test (e.g. from AWS Console test event)
+   
         scenario = event.get("scenario")
         if scenario == "heatwave":
             simulated_override = {
@@ -501,7 +459,7 @@ def lambda_handler(event, context):
                 "condition": "Severe Coldwave & Freezing"
             }
 
-        # Check for explicit locations or single city
+      
         if event.get("locations") and isinstance(event["locations"], list):
             locations = event["locations"]
         elif event.get("city"):
@@ -527,7 +485,6 @@ def lambda_handler(event, context):
     response_body = {
         "status": "SUCCESS",
         "project": "Cloud-Based Weather Data Collector and Alert System using AWS",
-        "students": ["Abhishek Patil (256237)", "Harshit Shelar (256247)"],
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "processed_locations": len(results),
         "total_alerts_triggered": total_alerts,
@@ -546,11 +503,10 @@ def lambda_handler(event, context):
     }
 
 
-# Support both handler names: 'lambda_handler' and 'handler'
 handler = lambda_handler
 
 if __name__ == "__main__":
-    # Local CLI invocation test
+ 
     print("Testing Lambda Handler locally...")
     test_event = {"city": "Mumbai"}
     output = lambda_handler(test_event, None)

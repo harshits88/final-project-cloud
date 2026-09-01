@@ -8,7 +8,7 @@ const { handler } = require("../backend/lambda_api/api_handler");
 
 describe("Weather API Gateway Handler", () => {
 
-  it("should return HEALTHY status and student names on /api/health", async () => {
+  it("should return HEALTHY status on /api/health", async () => {
     const event = {
       httpMethod: "GET",
       path: "/api/health"
@@ -17,7 +17,7 @@ describe("Weather API Gateway Handler", () => {
     assert.strictEqual(res.statusCode, 200);
     const body = JSON.parse(res.body);
     assert.strictEqual(body.status, "HEALTHY");
-    assert.ok(body.students.some(s => s.includes("Abhishek Patil")));
+    assert.strictEqual(body.service, "AWS Cloud Weather Data Collector & Alert System");
   });
 
   it("should handle CORS preflight OPTIONS request", async () => {

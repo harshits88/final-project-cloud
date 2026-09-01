@@ -1,13 +1,5 @@
-"""
-AWS Lambda Function: Cloud-Based Weather Data Collector and Alert System
-========================================================================
-Project: Cloud-Based Weather Data Collector and Alert System using AWS
-Course: M.Sc. Computer Science (Semester III)
-Students: Abhishek Patil (Roll No. 256237) & Harshit Shelar (Roll No. 256247)
-Runtime: Python 3.10 / 3.11 / 3.12 / 3.13 (AWS Lambda Native)
-"""
 
-# Re-export everything from lambda_function.py at root
+
 import os
 import sys
 

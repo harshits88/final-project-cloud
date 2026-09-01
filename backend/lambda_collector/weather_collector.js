@@ -1,8 +1,5 @@
 const https = require("https");
 
-// --------------------------------------------------
-// Known city coordinates
-// --------------------------------------------------
 
 const KNOWN_COORDINATES = {
     mumbai: {
@@ -34,9 +31,7 @@ const KNOWN_COORDINATES = {
     }
 };
 
-// --------------------------------------------------
-// Weather descriptions
-// --------------------------------------------------
+
 
 const WMO_WEATHER_CODES = {
     0: "Clear Sky",
@@ -67,20 +62,18 @@ function getWeatherDescription(code) {
         `Weather Condition (Code ${code})`;
 }
 
-// --------------------------------------------------
-// Resolve city coordinates
-// --------------------------------------------------
+
 
 async function resolveCityCoordinates(cityName) {
 
     const cleanName = String(cityName).trim().toLowerCase();
 
-    // First use known cities
+
     if (KNOWN_COORDINATES[cleanName]) {
         return KNOWN_COORDINATES[cleanName];
     }
 
-    // Dynamic Open-Meteo geocoding
+
     const url =
         "https://geocoding-api.open-meteo.com/v1/search" +
         `?name=${encodeURIComponent(cityName)}` +
@@ -132,10 +125,6 @@ async function resolveCityCoordinates(cityName) {
         }).on("error", reject);
     });
 }
-
-// --------------------------------------------------
-// Fetch live weather
-// --------------------------------------------------
 
 async function fetchLiveWeather(lat, lon, locationName) {
 
@@ -218,9 +207,6 @@ async function fetchLiveWeather(lat, lon, locationName) {
     });
 }
 
-// --------------------------------------------------
-// Process one city
-// --------------------------------------------------
 
 async function processCityWeather(cityName) {
 
@@ -238,11 +224,7 @@ async function processCityWeather(cityName) {
     };
 }
 
-// --------------------------------------------------
-// Lambda handler
-// --------------------------------------------------
 
-// Environment Configurations
 const AWS_REGION = process.env.AWS_REGION || "ap-south-1";
 const WEATHER_TABLE_NAME = process.env.WEATHER_TABLE_NAME || "weather-alert-dynamoDB";
 const ALERTS_TABLE_NAME = process.env.ALERTS_TABLE_NAME || "weather-alert-dynamoDB";
@@ -298,10 +280,7 @@ async function handler(event = {}) {
     };
 }
 
-// --------------------------------------------------
-// EXPORTS
-// IMPORTANT: exports are at the VERY BOTTOM
-// --------------------------------------------------
+
 
 module.exports = {
     handler,

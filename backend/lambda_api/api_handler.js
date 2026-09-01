@@ -1,7 +1,3 @@
-/**
- * AWS Lambda Function: Weather API Handler (JavaScript / Node.js)
- * RESTful API Gateway Lambda serving the Frontend Weather Dashboard.
- */
 
 const crypto = require("crypto");
 
@@ -327,8 +323,6 @@ exports.handler = async (event, context) => {
                 status: "HEALTHY",
                 runtime: "JavaScript (Node.js 20.x)",
                 service: "AWS Cloud Weather Data Collector & Alert System",
-                students: ["Abhishek Patil (256237)", "Harshit Shelar (256247)"],
-                semester: "M.Sc. Computer Science Semester III",
                 timestamp: new Date().toISOString()
             });
         }

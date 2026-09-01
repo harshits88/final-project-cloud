@@ -1,7 +1,6 @@
 @echo off
 REM ==============================================================================
 REM Cloud Weather Data Collector and Alert System - AWS SAM Deployment Script
-REM Students: Abhishek Patil (256237) & Harshit Shelar (256247)
 REM ==============================================================================
 
 echo ==============================================================================

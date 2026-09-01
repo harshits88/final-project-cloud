@@ -1,14 +1,12 @@
-# Department of Computer Science
-## M.Sc. Computer Science &mdash; Semester III
-### Project Synopsis
+# Cloud-Based Weather Data Collector and Alert System using AWS
+### Project Synopsis & Overview
 
 ---
 
 ### Project Metadata
 - **Title of the Project:** Cloud-Based Weather Data Collector and Alert System using AWS
-- **Students & Roll Numbers:**
-  - **Abhishek Patil** &mdash; Roll No. **256237**
-  - **Harshit Shelar** &mdash; Roll No. **256247**
+- **Architecture:** Serverless, Event-Driven Cloud Architecture
+- **Cloud Platform:** Amazon Web Services (AWS)
 - **Domain:** Cloud Computing, Distributed Systems, Event-Driven Architecture, IoT & Telemetry
 
 ---

@@ -1,7 +1,6 @@
 #!/bin/bash
 # ==============================================================================
 # Cloud Weather Data Collector and Alert System - AWS SAM Deployment Script
-# Students: Abhishek Patil (256237) & Harshit Shelar (256247)
 # ==============================================================================
 
 set -e

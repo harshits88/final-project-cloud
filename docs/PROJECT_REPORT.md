@@ -1,12 +1,5 @@
-# M.Sc. Computer Science &mdash; Semester III Project Report
-## Project Title: Cloud-Based Weather Data Collector and Alert System using AWS
-
-### Submitted by:
-- **Abhishek Patil** (Roll No: **256237**)
-- **Harshit Shelar** (Roll No: **256247**)
-
-**Department of Computer Science**  
-**Academic Year:** 2026
+# Cloud-Based Weather Data Collector and Alert System using AWS
+## Engineering & Technical Project Documentation Report
 
 ---
 

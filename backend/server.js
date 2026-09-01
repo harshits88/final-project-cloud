@@ -1,8 +1,4 @@
-/**
- * Local Cloud Simulator & Full-Stack Development Server (JavaScript / Node.js)
- * Emulates AWS Lambda, Amazon DynamoDB, Amazon EventBridge, and Amazon SNS locally.
- * Serves the Web Dashboard directly on http://localhost:8000.
- */
+
 
 const http = require("http");
 const fs = require("fs");
@@ -18,7 +14,7 @@ const PORT = process.env.PORT || 8000;
 const DATA_STORE_PATH = path.join(__dirname, "data_store.json");
 const FRONTEND_DIR = path.join(__dirname, "..", "frontend");
 
-// Persistent Local Cloud Data Store
+
 class CloudDataStore {
     constructor(filePath) {
         this.filePath = filePath;
@@ -237,7 +233,7 @@ async function populateInitialSampleData() {
             });
         }
 
-        // Trigger live fetch
+
         try {
             await executeCollectionForCity(cityName);
         } catch (e) {
@@ -261,7 +257,7 @@ function startBackgroundEventBridgeSimulator(intervalSeconds = 300) {
     }, intervalSeconds * 1000);
 }
 
-// MIME Types Map for Static Server
+
 const MIME_TYPES = {
     ".html": "text/html",
     ".css": "text/css",
@@ -283,14 +279,13 @@ function sendJson(res, statusCode, data) {
     res.end(JSON.stringify(data, null, 2));
 }
 
-// Create HTTP Server
+
 const server = http.createServer(async (req, res) => {
     const reqUrl = new URL(req.url, `http://${req.headers.host || "localhost:8000"}`);
     const pathname = reqUrl.pathname;
     const query = Object.fromEntries(reqUrl.searchParams.entries());
     const method = req.method.toUpperCase();
 
-    // CORS Preflight
     if (method === "OPTIONS") {
         res.writeHead(200, {
             "Access-Control-Allow-Origin": "*",
@@ -301,7 +296,6 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // --- REST API ROUTES ---
     if (pathname.startsWith("/api/")) {
         const city = query.city || "Mumbai";
 
@@ -354,8 +348,6 @@ const server = http.createServer(async (req, res) => {
                     api_gateway: "REST API with CORS"
                 },
                 project: "Cloud-Based Weather Data Collector and Alert System using AWS",
-                students: ["Abhishek Patil (256237)", "Harshit Shelar (256247)"],
-                semester: "M.Sc. Computer Science Semester III",
                 active_subscribers: (STORE.data.SNSSubscriptions || []).length,
                 total_readings_stored: (STORE.data.WeatherDataHistory || []).length,
                 total_alerts_logged: (STORE.data.WeatherAlerts || []).length
@@ -373,7 +365,7 @@ const server = http.createServer(async (req, res) => {
                             topic_arn: topicArn,
                             subscriptions: parsed.Subscriptions || []
                         });
-                    } catch (e) {}
+                    } catch (e) { }
                 }
                 return sendJson(res, 200, {
                     source: "LOCAL_STORE",
@@ -384,7 +376,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        // POST API Handler with Body Parsing
+
         let bodyData = "";
         req.on("data", chunk => bodyData += chunk);
         req.on("end", async () => {
@@ -447,8 +439,8 @@ const server = http.createServer(async (req, res) => {
                     return sendJson(res, 400, { error: "Endpoint (email or phone) is required." });
                 }
                 const sub = STORE.addSubscription(protocol, endpoint);
-                
-                // Also trigger live AWS SNS subscription if AWS CLI is available
+
+
                 const topicArn = "arn:aws:sns:ap-south-1:133197206940:weather-alert-SNS";
                 const cmd = `aws sns subscribe --topic-arn "${topicArn}" --protocol "${protocol}" --notification-endpoint "${endpoint}" --region ap-south-1`;
                 exec(cmd, (err, stdout, stderr) => {
@@ -484,7 +476,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // --- STATIC FRONTEND ASSETS ---
+
     let filePath = path.join(FRONTEND_DIR, pathname === "/" ? "index.html" : pathname);
     const extname = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[extname] || "application/octet-stream";
@@ -509,12 +501,21 @@ async function main() {
     await populateInitialSampleData();
     startBackgroundEventBridgeSimulator(300);
 
+    server.on("error", (err) => {
+        if (err.code === "EADDRINUSE") {
+            console.error(`\n[PORT CONFLICT] Port ${PORT} is already in use by another running instance.`);
+            console.error(`To free port ${PORT}, run: Stop-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess -Force`);
+            console.error(`Or close any previous Node.js terminal windows, then re-run.\n`);
+        } else {
+            console.error("[SERVER ERROR]", err);
+        }
+        process.exit(1);
+    });
+
     server.listen(PORT, () => {
         console.log("=".repeat(68));
         console.log(" [CLOUD] AWS WEATHER DATA COLLECTOR & ALERT SYSTEM");
-        console.log(" [STACK] 100% JavaScript (Node.js + HTML5/CSS3/JS)");
-        console.log(" [ACADEMIC] M.Sc. Computer Science - Semester III");
-        console.log(" [STUDENTS] Abhishek Patil (256237) & Harshit Shelar (256247)");
+        console.log(" [STACK] Full-Stack Cloud Native (Node.js + HTML5/CSS3/JS)");
         console.log("=".repeat(68));
         console.log(` [RUNNING] Web Dashboard available at: http://localhost:${PORT}`);
         console.log(` [SIMULATOR] Local Cloud: Lambda + DynamoDB + EventBridge + SNS active`);

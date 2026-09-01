@@ -92,6 +92,8 @@ const elements = {
   subscribeForm: document.getElementById("subscribeForm"),
   subscriberEmail: document.getElementById("subscriberEmail"),
   subscribeFeedback: document.getElementById("subscribeFeedback"),
+  subscribersList: document.getElementById("subscribersList"),
+  btnRefreshSubscribers: document.getElementById("btnRefreshSubscribers"),
   
   toastContainer: document.getElementById("toastContainer")
 };
@@ -101,6 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   initCharts();
   loadAllCityData(state.currentCity);
+  loadSubscribers();
   startAutoRefresh();
 });
 
@@ -139,6 +142,9 @@ function setupEventListeners() {
 
   // SNS Subscription Form
   elements.subscribeForm.addEventListener("submit", handleSnsSubscription);
+  if (elements.btnRefreshSubscribers) {
+    elements.btnRefreshSubscribers.addEventListener("click", loadSubscribers);
+  }
 
   // Cloud Simulation Buttons
   document.querySelectorAll(".btn-sim").forEach(btn => {
@@ -548,23 +554,83 @@ async function handleThresholdSave(e) {
 async function handleSnsSubscription(e) {
   e.preventDefault();
   const email = elements.subscriberEmail.value.trim();
+  const protocolSelect = document.getElementById("subscriberProtocol");
+  const protocol = protocolSelect ? protocolSelect.value : "email-json";
   if (!email) return;
 
   try {
     const res = await fetch(`${state.apiBaseUrl}/api/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ protocol: "email", endpoint: email })
+      body: JSON.stringify({ protocol, endpoint: email })
     }).then(r => r.json());
 
     elements.subscriberEmail.value = "";
-    showToast(`Subscribed ${email} to Amazon SNS WeatherAlertTopic!`, 'success');
-    elements.subscribeFeedback.innerHTML = `<span style="color: #10b981;">✓ Successfully subscribed ${email}. SNS alert pipeline linked.</span>`;
+    showToast(`Subscribed ${email} (${protocol}) to Amazon SNS weather-alert-SNS!`, 'success');
+    elements.subscribeFeedback.innerHTML = `<span style="color: #10b981;">✓ Successfully requested ${protocol} subscription for ${email}. Please check inbox to confirm.</span>`;
+    await loadSubscribers();
   } catch (err) {
     console.error("SNS Subscribe error:", err);
     showToast("Subscription request failed.", 'alert');
   }
 }
+
+async function loadSubscribers() {
+  if (!elements.subscribersList) return;
+  try {
+    const res = await fetch(`${state.apiBaseUrl}/api/subscriptions`).then(r => r.json());
+    const subs = res.subscriptions || [];
+    
+    if (subs.length === 0) {
+      elements.subscribersList.innerHTML = `<span style="color: #64748b; font-style: italic;">No subscribers found.</span>`;
+      return;
+    }
+
+    elements.subscribersList.innerHTML = subs.map(s => {
+      const isConfirmed = s.SubscriptionArn && s.SubscriptionArn !== "PendingConfirmation" && s.SubscriptionArn !== "pending confirmation";
+      const statusText = isConfirmed ? "CONFIRMED" : "PENDING";
+      const statusColor = isConfirmed ? "#10b981" : "#f59e0b";
+      const endpoint = s.Endpoint || s.endpoint || "Unknown";
+      const protocol = s.Protocol || s.protocol || "email";
+      const arn = s.SubscriptionArn || s.subscription_arn || "";
+
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border-radius: 6px; padding: 4px 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">
+            <div style="font-weight: 500; color: #f1f5f9; font-size: 0.76rem;">${endpoint}</div>
+            <div style="font-size: 0.68rem; color: #64748b;">${protocol} &bull; <span style="color: ${statusColor}; font-weight: 600;">${statusText}</span></div>
+          </div>
+          ${isConfirmed ? `
+            <button onclick="handleUnsubscribe('${arn}')" title="Unsubscribe endpoint" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; border-radius: 4px; padding: 2px 6px; font-size: 0.68rem; cursor: pointer;">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          ` : `
+            <span style="font-size: 0.65rem; color: #f59e0b; font-style: italic;">Pending</span>
+          `}
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Failed to load subscribers:", err);
+  }
+}
+
+window.handleUnsubscribe = async function(subArn) {
+  if (!confirm("Are you sure you want to unsubscribe this recipient from Amazon SNS?")) return;
+  try {
+    const res = await fetch(`${state.apiBaseUrl}/api/unsubscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription_arn: subArn })
+    }).then(r => r.json());
+
+    showToast("Subscriber removed from Amazon SNS topic.", "info");
+    await loadSubscribers();
+  } catch (err) {
+    console.error("Unsubscribe error:", err);
+    showToast("Failed to unsubscribe endpoint.", "alert");
+  }
+};
 
 async function triggerSimulation(scenario) {
   if (scenario === 'normal') {

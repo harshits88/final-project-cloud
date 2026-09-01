@@ -1,48 +1,48 @@
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "DynamoDBTableAccess",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:PutItem",
-        "dynamodb:GetItem",
-        "dynamodb:UpdateItem",
-        "dynamodb:Query",
-        "dynamodb:Scan",
-        "dynamodb:DescribeTable"
-      ],
-      "Resource": [
-        "arn:aws:dynamodb:us-east-1:609722444170:table/weatheralerts",
-        "arn:aws:dynamodb:us-east-1:609722444170:table/weatheralerts/*",
-        "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherData",
-        "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherData/*",
-        "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherDataHistory*",
-        "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherAlerts*"
-      ]
-    },
-    {
-      "Sid": "SNSTopicPublishAccess",
-      "Effect": "Allow",
-      "Action": [
-        "sns:Publish",
-        "sns:GetTopicAttributes",
-        "sns:ListSubscriptionsByTopic"
-      ],
-      "Resource": [
-        "arn:aws:sns:us-east-1:609722444170:WeatherAlerts",
-        "arn:aws:sns:us-east-1:609722444170:WeatherAlertTopic*"
-      ]
-    },
-    {
-      "Sid": "CloudWatchLogsAccess",
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:aws:logs:us-east-1:609722444170:*"
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DynamoDBTableAccess",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:DescribeTable"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-1:609722444170:table/weatheralerts",
+                "arn:aws:dynamodb:us-east-1:609722444170:table/weatheralerts/*",
+                "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherData",
+                "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherData/*",
+                "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherDataHistory*",
+                "arn:aws:dynamodb:us-east-1:609722444170:table/WeatherAlerts*"
+            ]
+        },
+        {
+            "Sid": "SNSTopicPublishAccess",
+            "Effect": "Allow",
+            "Action": [
+                "sns:Publish",
+                "sns:GetTopicAttributes",
+                "sns:ListSubscriptionsByTopic"
+            ],
+            "Resource": [
+                "arn:aws:sns:us-east-1:609722444170:WeatherAlerts",
+                "arn:aws:sns:us-east-1:609722444170:WeatherAlertTopic*"
+            ]
+        },
+        {
+            "Sid": "CloudWatchLogsAccess",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:us-east-1:609722444170:*"
+        }
+    ]
 }

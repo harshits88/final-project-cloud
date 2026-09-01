@@ -339,14 +339,30 @@
           <p class="sidebar-subtitle">Subscribe an email to receive instant alerts via Amazon SNS</p>
           
           <form id="subscribeForm" class="subscribe-form">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select id="subscriberProtocol" style="background: rgba(15, 23, 42, 0.7); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 6px 10px; font-size: 0.85rem; outline: none; cursor: pointer;">
+                <option value="email-json" selected>email-json (Recommended)</option>
+                <option value="email">email (Standard)</option>
+              </select>
+            </div>
             <div class="input-with-button">
               <input type="email" id="subscriberEmail" placeholder="Enter recipient email..." required>
               <button type="submit" class="btn btn-primary" id="btnSubscribe">
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
             </div>
-            <small class="form-hint" id="subscribeFeedback">Subscribes endpoint to Amazon SNS <code>WeatherAlertTopic</code>.</small>
+            <small class="form-hint" id="subscribeFeedback">Subscribes endpoint to Amazon SNS <code>weather-alert-SNS</code> (ap-south-1).</small>
           </form>
+
+          <div style="margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <small style="color: #94a3b8; font-weight: 600;"><i class="fa-solid fa-users"></i> TOPIC SUBSCRIBERS</small>
+              <button id="btnRefreshSubscribers" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 0.75rem;"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+            </div>
+            <div id="subscribersList" style="max-height: 140px; overflow-y: auto; font-size: 0.78rem; display: flex; flex-direction: column; gap: 4px;">
+              <!-- Dynamic Subscribers -->
+            </div>
+          </div>
         </div>
 
       </aside>

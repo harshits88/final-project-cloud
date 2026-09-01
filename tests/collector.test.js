@@ -6,7 +6,7 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
 const { evaluateWeatherData, getWeatherDescription } = require("../backend/lambda_collector/threshold_checker");
-const { resolveCityCoordinates } = require("../backend/lambda_collector/weather_collector");
+const { resolveCityCoordinates } = require("../backend/lambda_collector/weather_collector.js");
 
 describe("Threshold Checker Engine", () => {
 

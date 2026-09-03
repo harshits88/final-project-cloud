@@ -417,4 +417,5 @@ node --test tests/api.test.js tests/collector.test.js
 2. **Zero-Dependency Lambda:** Built with standard Python library (`urllib.request`) and `boto3`, requiring no large pip package uploads.
 3. **Optimized DynamoDB Schema:** Partitioning by city ensures horizontal scalability with no bottlenecking across partitions.
 4. **Subscription Validation:** Unconfirmed subscriptions are protected from premature deletion, ensuring clean SNS subscriber state.#   f i n a l - p r o j e c t - c l o u d  
+ #   f i n a l - p r o j e c t - c l o u d  
  
